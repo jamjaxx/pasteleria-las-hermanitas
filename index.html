@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pastelería Las Hermanitas | Tienda Virtual</title>
+
+  <!-- 🧁 Favicon -->
+  <link rel="icon" type="image/png" href="Images/logo ofi.png">
+
+  <style>
+    :root{
+      --bg:#ffffff;--text:#1f2937;--muted:#6b7280;--brand:#f59e0b;--line:#e5e7eb;--card:#f9fafb;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial,sans-serif;background:var(--bg);color:var(--text)}
+    a{color:inherit;text-decoration:none}
+    img{display:block;width:100%;height:auto;border-radius:16px;background:#eee}
+
+    /* ===== SPLASH (compacto, no tapa todo) ===== */
+    #splash{
+      position:fixed; left:0; top:0; width:100%; height:36vh; /* franja superior */
+      background:#fff; display:grid; place-items:center; z-index:100;
+      box-shadow:0 6px 24px rgba(0,0,0,.06);
+      pointer-events:none; /* no bloquea clics si algo falla */
+      animation:fadeOut 1.2s ease 1.2s forwards; /* desaparece solo */
+    }
+    #splash .logo{
+      width:min(280px,55vw); height:auto; border-radius:22px;
+      animation:pop .9s ease-out both;
+    }
+    @keyframes pop{
+      0%{opacity:0; transform:scale(.82)}
+      60%{opacity:1; transform:scale(1.05)}
+      100%{opacity:1; transform:scale(1)}
+    }
+    @keyframes fadeOut{
+      to{ opacity:0; transform:translateY(-14px); visibility:hidden }
+    }
+
+    /* ===== HEADER ===== */
+    header{position:sticky; top:0; z-index:10; background:rgba(255,255,255,.9); backdrop-filter:blur(8px); border-bottom:1px solid var(--line)}
+    .wrap{max-width:1100px; margin:auto; padding:16px}
+    .row{display:flex; gap:12px; align-items:center; justify-content:space-between}
+    nav{display:flex; gap:10px; flex-wrap:wrap}
+    .btn{padding:10px 14px; border:1px solid var(--line); border-radius:999px; background:#fff; cursor:pointer; transition:.2s; font-weight:600}
+    .btn:hover{transform:translateY(-1px); box-shadow:0 6px 16px rgba(0,0,0,.06)}
+    .btn.brand{background:var(--brand); border-color:var(--brand); color:#111827}
+    .btn.ghost{background:transparent}
+    .badge{display:inline-block; padding:2px 10px; border-radius:999px; background:var(--card); border:1px solid var(--line); font-size:12px; color:var(--muted)}
+    .brand-logo{height:64px; width:auto; border-radius:16px; object-fit:cover}
+
+    /* ===== HERO / INTRO ===== */
+    .hero{padding:40px 16px 24px}
+    .hero .grid{display:grid; grid-template-columns:1.2fr .8fr; gap:24px}
+    .hero h1{font-size:clamp(28px,4vw,44px); line-height:1.1; margin:0 0 8px}
+    .hero p{color:var(--muted); margin:0 0 16px}
+    .pillbar{display:flex; gap:10px; flex-wrap:wrap; margin:12px 0}
+    .card{background:var(--card); border:1px solid var(--line); border-radius:20px; padding:16px}
+
+    /* ===== SECCIONES ===== */
+    section{padding:32px 16px}
+    h2.section-title{font-size:clamp(22px,3vw,30px); margin:0 0 12px}
+    .sub{color:var(--muted); margin:0 0 18px}
+
+    /* ===== PRODUCTOS (carrusel) ===== */
+    .filters{display:flex; gap:10px; flex-wrap:wrap; margin:0 0 12px}
+    .carousel{position:relative}
+    .scroller{display:flex; gap:18px; overflow-x:auto; padding-bottom:8px; scroll-snap-type:x mandatory}
+    .scroller::-webkit-scrollbar{height:8px}
+    .scroller::-webkit-scrollbar-thumb{background:#ddd; border-radius:999px}
+    .product{flex:0 0 300px; background:var(--card); border:1px solid var(--line); border-radius:20px; overflow:hidden; display:flex; flex-direction:column; scroll-snap-align:start}
+    .product img{aspect-ratio:4/3; object-fit:cover}
+    .product .info{padding:14px 14px 12px}
+    .price{font-weight:800}
+    .muted{color:var(--muted)}
+    .nav-arrow{
+      position:absolute; top:40%; transform:translateY(-50%); z-index:2;
+      width:42px; height:42px; border-radius:999px; border:1px solid var(--line); background:#fff; cursor:pointer;
+      display:grid; place-items:center; font-size:20px; box-shadow:0 6px 16px rgba(0,0,0,.06)
+    }
+    .nav-arrow.prev{left:-6px}
+    .nav-arrow.next{right:-6px}
+    @media (max-width:600px){.nav-arrow{display:none}}
+
+    /* ===== CARRITO ===== */
+    .cart-toggle{position:fixed; right:16px; bottom:16px; z-index:60}
+    .sheet{position:fixed; inset:0; pointer-events:none}
+    .sheet .panel{position:absolute; top:0; right:0; width:min(440px,100%); height:100%; background:#fff; border-left:1px solid var(--line); transform:translateX(100%); transition:.25s; display:flex; flex-direction:column}
+    .sheet.open{pointer-events:auto}
+    .sheet.open .panel{transform:translateX(0)}
+    .panel header{display:flex; align-items:center; justify-content:space-between; padding:14px 16px; border-bottom:1px solid var(--line)}
+    .cart-list{flex:1; overflow:auto; padding:8px 16px; display:flex; flex-direction:column; gap:12px}
+    .cart-item{display:grid; grid-template-columns:56px 1fr auto; gap:12px; align-items:center; border:1px solid var(--line); border-radius:12px; padding:8px}
+    .qty{display:inline-flex; align-items:center; border:1px solid var(--line); border-radius:999px; overflow:hidden}
+    .qty button{width:32px; height:32px; border:0; background:#fff; cursor:pointer}
+    .qty input{width:40px; text-align:center; border:0}
+    .panel footer{border-top:1px solid var(--line); padding:14px 16px}
+
+    /* ===== RESERVAS ===== */
+    form .grid-2{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+    @media (max-width:700px){form .grid-2{grid-template-columns:1fr}}
+    input,select,textarea{width:100%; padding:10px; border:1px solid var(--line); border-radius:12px; font:inherit; background:#fff}
+    label{font-weight:600; margin:6px 0; display:block}
+
+    /* ===== PAGOS ===== */
+    .pay-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:12px}
+    @media (max-width:700px){.pay-grid{grid-template-columns:1fr}}
+    .paybox{border:1px solid var(--line); border-radius:16px; padding:14px; background:#fff}
+    .qr{display:grid; place-items:center; border:1px dashed var(--line); border-radius:12px; padding:24px; margin-top:8px}
+    .small{font-size:12px; color:var(--muted)}
+
+    footer{border-top:1px solid var(--line); padding:24px 16px; color:var(--muted); text-align:center}
+
+    /* ===== MODAL WhatsApp ===== */
+    .modal{position:fixed; inset:0; display:none; place-items:center; background:rgba(0,0,0,.35); z-index:70}
+    .modal.open{display:grid}
+    .modal .box{background:#fff; border:1px solid var(--line); border-radius:16px; max-width:520px; width:92%; padding:16px}
+    .modal h3{margin:0 0 8px}
+    .list{display:flex; flex-direction:column; gap:8px; margin:8px 0 12px}
+    .list label{display:flex; gap:10px; align-items:center; border:1px solid var(--line); border-radius:12px; padding:10px}
+    .modal .actions{display:flex; justify-content:flex-end; gap:8px}
+
+    /* ===== Responsive ===== */
+    @media (max-width:900px){.hero .grid{grid-template-columns:1fr}}
+    /* Snackbar */
+.snackbar{
+  position:fixed; left:50%; bottom:18px; transform:translateX(-50%);
+  background:#111827; color:#fff; padding:10px 14px; border-radius:12px;
+  display:flex; gap:10px; align-items:center; z-index:80;
+  box-shadow:0 8px 20px rgba(0,0,0,.25); opacity:0; pointer-events:none; transition:opacity .2s, transform .2s;
+}
+.snackbar.show{ opacity:1; pointer-events:auto; transform:translateX(-50%) translateY(0) }
+.snackbar .btn{ background:#fff; border-color:#fff; color:#111827; padding:6px 10px; border-radius:999px; font-weight:700 }
+  </style>
+</head>
+<!-- Snackbar: agregado al carrito -->
+<div class="snackbar" id="snack">
+  Agregado al carrito
+  <button class="btn" id="snack-view">Ver carrito</button>
+  <button class="btn" id="snack-pay">Ir a pagar</button>
+</div>
+<body>
+  <!-- ===== SPLASH ANIMATION ===== -->
+  <div id="splash">
+    <img class="logo" src="Images/logo ofi.png" alt="Logo Pastelería Las Hermanitas">
+  </div>
+
+  <!-- ===== HEADER ===== -->
+  <header>
+    <div class="wrap row">
+      <div class="row" style="gap:10px;align-items:center">
+        <img class="brand-logo" src="Images/logo ofi.png" alt="Logo" />
+        <div class="row" style="gap:6px;align-items:baseline">
+          <span class="badge">Pastelería Las Hermanitas</span>
+          <strong>Tiendita Virtual</strong>
+        </div>
+      </div>
+      <nav>
+        <a class="btn ghost" href="#intro">Introducción</a>
+        <a class="btn ghost" href="#productos">Productos</a>
+        <a class="btn ghost" href="#reservas">Reservas</a>
+        <a class="btn ghost" href="#pago">Formas de pago</a>
+        <button class="btn brand" id="open-cart">Carrito (0)</button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ===== HERO / INTRO ===== -->
+  <section id="intro" class="hero">
+    <div class="wrap">
+      <div class="grid">
+        <div>
+          <h1>Dulces hechos con cariño, ahora a un clic.</h1>
+          <p>Explora, reserva y compra en línea pasteles simples y deliciosos, con tamaños para cada ocasión. Proyecto educativo con enfoque B2C para Tupiza.</p>
+          <div class="pillbar">
+            <span class="badge">Catálogo en línea</span>
+            <span class="badge">Carrito y reservas</span>
+            <span class="badge">Pagos QR / Tarjeta*</span>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <a class="btn brand" href="#productos">Ver productos</a>
+            <a class="btn" href="#reservas">Hacer una reserva</a>
+          </div>
+        </div>
+        <div class="card">
+          <strong>Espacio para portada</strong>
+          <p class="muted">Reemplaza por una foto de tu pastelería o un collage de productos.</p>
+          <img src="Images/portada.png" alt="Portada (coloca tu imagen en Images/portada.jpg)" />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== PRODUCTOS ===== -->
+  <section id="productos">
+    <div class="wrap">
+      <h2 class="section-title">Productos</h2>
+      <p class="sub">Pasteles simples/tradicionales en varios tamaños. Desliza horizontalmente o usa las flechas.</p>
+
+      <div class="filters">
+        <button class="btn" data-filter="all">Todos</button>
+        <button class="btn" data-filter="simple">Simple / Tradicional</button>
+      </div>
+
+      <div class="carousel">
+        <button class="nav-arrow prev" id="prev-products" aria-label="Anterior">‹</button>
+        <div class="scroller" id="product-scroller"></div>
+        <button class="nav-arrow next" id="next-products" aria-label="Siguiente">›</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== RESERVAS ===== -->
+  <section id="reservas" style="background:linear-gradient(180deg,#fff,#fff8e6)">
+    <div class="wrap">
+      <h2 class="section-title">Reservas</h2>
+      <p class="sub">Agenda tu pastel con anticipación. Te confirmaremos por WhatsApp/Email.</p>
+      <form id="reserve-form" class="card" onsubmit="reserve(event)">
+        <div class="grid-2">
+          <div>
+            <label>Nombre y apellido</label>
+            <input required name="nombre" placeholder="Ej. Ana Pérez" />
+          </div>
+          <div>
+            <label>Teléfono / WhatsApp</label>
+            <input required name="telefono" placeholder="Ej. 7xx xx xx" />
+          </div>
+          <div>
+            <label>Fecha de entrega</label>
+            <input required type="date" name="fecha" />
+          </div>
+          <div>
+            <label>Hora de entrega</label>
+            <input required type="time" name="hora" />
+          </div>
+          <div>
+            <label>Tamaño</label>
+            <select name="tamano" required>
+                <option value="5 porciones">5 porciones</option>
+                <option value="10 porciones">10 porciones</option>
+                <option value="15 porciones">15 porciones</option>
+                <option value="20 porciones">20 porciones</option>
+                <option value="25 porciones">25 porciones</option>
+                <option value="30 porciones">30 porciones</option>
+            </select>
+          </div>
+          <div>
+            <label>Sabor</label>
+            <select name="sabor" required>
+              <option>Vainilla</option>
+              <option>Chocolate</option>
+              <option>Mixto</option>
+              <option> Tres Leches</option>
+            </select>
+          </div>
+          <div>
+            <label>Entrega</label>
+            <select name="entrega" required>
+              <option>Retiro en tienda</option>
+              <option>Delivery (coordinar)</option>
+            </select>
+          </div>
+          <div>
+            <label>Dirección (si es delivery)</label>
+            <input name="direccion" placeholder="Barrio, calle y referencia" />
+          </div>
+        </div>
+        <label>Mensaje en el pastel (opcional)</label>
+        <input name="mensaje" placeholder="Ej. ¡Feliz Cumple, Sofi!" />
+        <label>Indicaciones especiales</label>
+        <textarea name="detalle" rows="3" placeholder="Colores, temática simple, etc."></textarea>
+        <div class="row" style="justify-content:flex-end;margin-top:10px">
+          <button class="btn" type="reset">Limpiar</button>
+          <button class="btn brand" type="submit">Reservar</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <!-- ===== FORMAS DE PAGO ===== -->
+  <section id="pago">
+    <div class="wrap">
+      <h2 class="section-title">Formas de pago</h2>
+      <p class="sub">Selecciona un método en el checkout. *Las opciones con tarjeta son demostrativas.</p>
+      <div class="pay-grid">
+        <div class="paybox">
+          <strong>Pago con QR</strong>
+          <p class="small">Carga tu QR interoperable o del banco que utilices.</p>
+          <div class="qr"><img src="Images/QR pago.jpeg" alt="QR (Images/qr.png)" style="max-width:220px"></div>
+        </div>
+        <div class="paybox">
+          <strong>Tarjeta / Link de pago</strong>
+          <p class="small">Para producción real, integra tu pasarela. Aquí se simula.</p>
+          <div class="qr">Marcador de pasarela</div>
+        </div>
+        <div class="paybox">
+          <strong>Efectivo contra entrega</strong>
+          <p class="small">Paga al recibir o al recoger. Ideal para pedidos locales.</p>
+          <div class="qr">Confirmación en mostrador</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    © 2025 Pastelería Las Hermanitas — Hecho con cariño 🍰
+  </footer>
+
+  <!-- ===== CART SHEET ===== -->
+  <button class="btn brand cart-toggle" id="fab-cart">Carrito (0)</button>
+  <div class="sheet" id="cart-sheet" aria-hidden="true">
+    <div class="panel">
+      <header>
+        <div style="display:flex;align-items:center;gap:8px">
+          <button class="btn ghost" id="back-cart" style="font-size:20px">⬅</button>
+          <strong>Tu carrito</strong>
+        </div>
+        <button class="btn" id="close-cart">✖</button>
+      </header>
+      <div class="cart-list" id="cart-list"></div>
+      <footer>
+  <div class="row" style="justify-content:space-between">
+    <div>
+      <div>Total</div>
+      <div id="cart-total" style="font-weight:800;font-size:20px">Bs 0</div>
+    </div>
+    <div class="row" style="gap:8px;flex-wrap:wrap">
+      <button class="btn ghost" id="keep-shopping">Seguir comprando</button>
+      <button class="btn" id="clear-cart">Vaciar</button>
+      <button class="btn brand" id="checkout">Ir a pagar</button>
+    </div>
+  </div>
+</footer>
+    </div>
+  </div>
+
+  <!-- ===== MODAL: Selección de destinatarios WhatsApp ===== -->
+  <div class="modal" id="wa-modal" aria-hidden="true" role="dialog" aria-labelledby="wa-title">
+    <div class="box">
+      <h3 id="wa-title">Enviar por WhatsApp</h3>
+      <p class="small">Selecciona a quién deseas enviar el mensaje:</p>
+      <div class="list" id="wa-list"></div>
+      <div class="actions">
+        <button class="btn" id="wa-cancel">Cancelar</button>
+        <button class="btn" id="wa-select-all">Seleccionar todo</button>
+        <button class="btn brand" id="wa-send">Enviar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ========= DATA ========= */
+    const productosBase = [
+       {id:"p1", nombre:"Pastel simple 5 porciones", tipo:"simple", precio: 40, porciones:5, img:"Images/40.jpeg"},
+      {id:"p2", nombre:"Pastel simple 10 porciones", tipo:"simple", precio: 70, porciones:10, img:"Images/70.jpeg"},
+      {id:"p3", nombre:"Pastel simple 15 porciones", tipo:"simple", precio: 90, porciones:15, img:"Images/90.jpeg"},
+      {id:"p4", nombre:"Pastel simple 20 porciones", tipo:"simple", precio: 100, porciones:20, img:"Images/100.jpeg"},
+      {id:"p5", nombre:"Pastel Simple 25 porciones", tipo:"simple", precio: 110, porciones:25, img:"Images/110.jpeg"},
+      {id:"p6", nombre:"Pastel Simple 30 porciones", tipo:"simple", precio: 140, porciones:30, img:"Images/140.jpeg"}
+    ];
+
+    // Lista con nombres y números (formato: país+línea, sin '+')
+    const WHATSAPP_RECIPIENTS = [
+      { nombre: 'Caja (Mostrador)', phone: '59170000000' },
+      { nombre: 'Administrador',    phone: '59173864580' },
+      { nombre: 'Producción',       phone: '59172222222' }
+    ];
+    const NEGOCIO_NOMBRE = 'Pastelería Las Hermanitas';
+
+    /* ========= ELEMENTOS ========= */
+    const $scroller = document.getElementById('product-scroller');
+    const $prev = document.getElementById('prev-products');
+    const $next = document.getElementById('next-products');
+
+    const $cartSheet = document.getElementById('cart-sheet');
+    const $cartList = document.getElementById('cart-list');
+    const $cartTotal = document.getElementById('cart-total');
+    const $openCartBtns = [document.getElementById('open-cart'), document.getElementById('fab-cart')];
+    const $closeCart = document.getElementById('close-cart');
+    const $backCart = document.getElementById('back-cart');
+    const $checkout = document.getElementById('checkout');
+    const $clear = document.getElementById('clear-cart');
+    const $keep = document.getElementById('keep-shopping');
+    $keep.addEventListener('click', closeCart);
+
+    // Modal WA
+    const $waModal = document.getElementById('wa-modal');
+    const $waList = document.getElementById('wa-list');
+    const $waCancel = document.getElementById('wa-cancel');
+    const $waSelectAll = document.getElementById('wa-select-all');
+    const $waSend = document.getElementById('wa-send');
+    let pendingText = '';
+
+    /* ========= UTIL ========= */
+    function capital(s){return s.charAt(0).toUpperCase()+s.slice(1)}
+    function svgPlaceholder(){
+      return `<?xml version='1.0' encoding='UTF-8'?>
+      <svg xmlns='http://www.w3.org/2000/svg' width='800' height='600'>
+        <rect width='100%' height='100%' fill='%23f3f4f6'/>
+        <text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='%239ca3af' font-size='24' font-family='Arial'>Coloca tu imagen en Images/</text>
+      </svg>`
+    }
+    function iconCake(){
+      return `<?xml version='1.0' encoding='UTF-8'?>
+      <svg xmlns='http://www.w3.org/2000/svg' width='56' height='56' viewBox='0 0 24 24' fill='%23f59e0b'>
+        <path d='M12 2c1.1 0 2 .9 2 2 0 .74-.4 1.38-1 1.72V8H11V5.72A1.99 1.99 0 0 1 10 4c0-1.1.9-2 2-2z'/>
+        <path d='M3 14c0-1.1.9-2 2-2h14a2 2 0 0 1 2 2v6H3v-6z'/>
+        <path d='M3 12l3.5-2h11L21 12H3z' opacity='.3'/>
+      </svg>`
+    }
+
+    /* ========= RENDER PRODUCTOS ========= */
+    let filter = 'all';
+    document.querySelectorAll('[data-filter]').forEach(btn=>{
+      btn.addEventListener('click',()=>{filter = btn.dataset.filter; renderProductos();})
+    });
+
+    function renderProductos(){
+      $scroller.innerHTML = '';
+      const data = productosBase.filter(p => filter==='all' ? true : p.tipo===filter);
+      data.forEach(p=>{
+        const el = document.createElement('article');
+        el.className = 'product';
+        el.innerHTML = `
+          <img src="${p.img}" alt="${p.nombre}" onerror="this.src='data:image/svg+xml;utf8,${encodeURIComponent(svgPlaceholder())}'"/>
+          <div class="info">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+              <strong>${p.nombre}</strong>
+              <span class="badge">${p.porciones} porciones</span>
+            </div>
+            <div class="muted" style="margin:6px 0 8px">Tipo: ${capital(p.tipo)}</div>
+            <div class="row" style="justify-content:space-between;gap:8px">
+              <div class="price">Bs ${p.precio}</div>
+              <button class="btn brand" onclick='addToCart("${p.id}")'>Agregar</button>
+            </div>
+          </div>`;
+        $scroller.appendChild(el);
+      });
+    }
+
+    $prev.addEventListener('click', ()=>{$scroller.scrollBy({left: -($scroller.clientWidth*0.9), behavior:'smooth'});});
+    $next.addEventListener('click', ()=>{$scroller.scrollBy({left: ($scroller.clientWidth*0.9), behavior:'smooth'});});
+
+    /* ========= CARRITO ========= */
+    const cart = JSON.parse(localStorage.getItem('cart-hermanitas')||'[]');
+    function persist(){localStorage.setItem('cart-hermanitas', JSON.stringify(cart));}
+    function cartCount(){return cart.reduce((n,i)=>n+i.cantidad,0)}
+
+    function openCart(){$cartSheet.classList.add('open'); $cartSheet.setAttribute('aria-hidden','false');}
+    function closeCart(){$cartSheet.classList.remove('open'); $cartSheet.setAttribute('aria-hidden','true');}
+
+    $openCartBtns.forEach(b=>b.addEventListener('click',openCart));
+    $closeCart.addEventListener('click',closeCart);
+    $backCart.addEventListener('click',closeCart);
+
+    function addToCart(id){
+  const prod = productosBase.find(p=>p.id===id);
+  if(!prod) return;
+
+  // 👇 Detecta si el carrito estaba vacío ANTES de agregar
+  const wasEmpty = cart.length === 0;
+
+  const found = cart.find(i=>i.id===id);
+  if(found) {
+    found.cantidad++;
+  } else {
+    cart.push({id:prod.id, nombre:prod.nombre, precio:prod.precio, cantidad:1});
+  }
+
+  persist();
+  renderCart();
+  updateCartButtons();
+
+  // 👇 Si estaba vacío, abrimos el carrito; si no, mostramos snackbar
+  if (wasEmpty) {
+    openCart();
+  } else {
+    if (typeof showSnack === 'function') showSnack();
+  }
+}
+
+    function changeQty(id,delta){
+      const item = cart.find(i=>i.id===id); if(!item) return;
+      item.cantidad += delta;
+      if(item.cantidad<=0){ const idx = cart.findIndex(i=>i.id===id); cart.splice(idx,1); }
+      persist(); renderCart(); updateCartButtons();
+      if (cart.length === 0) closeCart();
+    }
+    function removeItem(id){
+      const idx = cart.findIndex(i=>i.id===id); if(idx>-1){cart.splice(idx,1); 
+        persist(); renderCart(); updateCartButtons();}
+        if (cart.length === 0) closeCart();
+    }
+    function clearCart(){cart.splice(0,cart.length); persist(); renderCart(); updateCartButtons();}
+
+    function renderCart(){
+      $cartList.innerHTML=''; let total=0;
+      cart.forEach(i=>{
+        total += i.precio*i.cantidad;
+        const row = document.createElement('div');
+        row.className='cart-item';
+        row.innerHTML = `
+          <img src="data:image/svg+xml;utf8,${encodeURIComponent(iconCake())}" alt="${i.nombre}" />
+          <div>
+            <div style="font-weight:600">${i.nombre}</div>
+            <div class="muted">Bs ${i.precio} c/u</div>
+            <div class="qty" style="margin-top:6px">
+              <button onclick='changeQty("${i.id}",-1)' aria-label='Quitar'>−</button>
+              <input value='${i.cantidad}' readonly aria-label='Cantidad'>
+              <button onclick='changeQty("${i.id}",1)' aria-label='Agregar'>＋</button>
+            </div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-weight:700">Bs ${(i.precio*i.cantidad).toFixed(2)}</div>
+            <button class="btn" style="margin-top:6px" onclick='removeItem("${i.id}")'>Eliminar</button>
+          </div>`;
+        $cartList.appendChild(row);
+      });
+      $cartTotal.textContent = 'Bs ' + total.toFixed(2);
+    }
+
+    function updateCartButtons(){
+      const text = `Carrito (${cartCount()})`;
+      const openBtn = document.getElementById('open-cart');
+      const fabBtn = document.getElementById('fab-cart');
+      if (openBtn) openBtn.textContent = text;
+      if (fabBtn) fabBtn.textContent = text;
+    }
+
+    /* ========= MODAL WhatsApp ========= */
+    function renderRecipientList(){
+      $waList.innerHTML = '';
+      WHATSAPP_RECIPIENTS.forEach((r, idx) => {
+        const id = `wa-${idx}`;
+        const item = document.createElement('label');
+        item.innerHTML = `
+          <input type="checkbox" id="${id}" data-phone="${r.phone}" checked />
+          <div style="flex:1">
+            <div style="font-weight:600">${r.nombre}</div>
+            <div class="small">${r.phone}</div>
+          </div>`;
+        $waList.appendChild(item);
+      });
+    }
+    function openWaModal(encodedText){
+      pendingText = encodedText; renderRecipientList();
+      $waModal.classList.add('open'); $waModal.setAttribute('aria-hidden','false');
+    }
+    function closeWaModal(){
+      $waModal.classList.remove('open'); $waModal.setAttribute('aria-hidden','true'); pendingText='';
+    }
+    $waCancel.addEventListener('click', closeWaModal);
+    $waSelectAll.addEventListener('click', ()=>{ $waList.querySelectorAll('input[type="checkbox"]').forEach(ch => ch.checked = true); });
+    $waSend.addEventListener('click', ()=>{
+      const selected = Array.from($waList.querySelectorAll('input[type="checkbox"]:checked')).map(ch => ch.dataset.phone);
+      if(!selected.length){ alert('Selecciona al menos un destinatario.'); return; }
+      selected.forEach((phone, idx) => {
+        const url = `https://wa.me/${phone}?text=${pendingText}`;
+        setTimeout(()=>window.open(url,'_blank'), idx*250);
+      });
+      // Si venía del checkout, limpiamos carrito:
+      if (cart.length){ clearCart(); closeCart(); alert('¡Pedido enviado! Te contactaremos por WhatsApp para coordinar.'); }
+      closeWaModal();
+    });
+
+    // ====== Checkout (texto limpio + modal) ======
+$checkout.addEventListener('click', ()=>{
+  if(!cart.length){ alert('Tu carrito está vacío'); return; }
+
+  const resumen = cart.map(i=>`${i.cantidad} x ${i.nombre} (Bs ${i.precio})`).join('\n');
+  const total = cart.reduce((n,i)=>n+i.precio*i.cantidad,0).toFixed(2);
+  const metodo = prompt(`Resumen:\n${resumen}\n\nTotal: Bs ${total}\n\nEscribe el método: QR / Tarjeta / Efectivo`);
+  if(!metodo) return;
+
+  // ✅ Armar mensaje en texto plano (con \n) y codificar una sola vez
+  const mensaje = [
+    `*${NEGOCIO_NOMBRE}*`,
+    `Quiero confirmar mi pedido:`,
+    resumen,
+    `*Total:* Bs ${total}`,
+    `*Pago:* ${metodo}`
+  ].join('\n');
+
+  const texto = encodeURIComponent(mensaje);
+  openWaModal(texto);
+});
+
+    $clear.addEventListener('click', ()=>{ clearCart(); closeCart(); });
+
+    // ====== Reservas (texto limpio + modal) ======
+function reserve(e){
+  e.preventDefault();
+  const data = Object.fromEntries(new FormData(e.target).entries());
+
+  const ticket = [
+    'Reserva:',
+    `Nombre: ${data.nombre}`,
+    `Tel: ${data.telefono}`,
+    `Entrega: ${data.fecha} ${data.hora}`,
+    `Tamaño: ${data.tamano}`,
+    `Sabor: ${data.sabor}`,
+    `Modalidad: ${data.entrega}`,
+    `Dirección: ${data.direccion || '-'}`,
+    `Mensaje: ${data.mensaje || '-'}`,
+    `Detalle: ${data.detalle || '-'}`
+  ].join('\n');
+
+  alert('¡Reserva armada! Selecciona a quién enviar por WhatsApp.');
+  const textoReserva = encodeURIComponent(`*Reserva web*\n${ticket}`);
+  openWaModal(textoReserva);
+  e.target.reset();
+}
+window.reserve = reserve;
+
+    /* ========= SPLASH fallback adicional ========= */
+    (function(){
+      const splash = document.getElementById('splash');
+      if(!splash) return;
+      // Por si algo impide la animación CSS, forzamos su retiro a los 2.5s
+      setTimeout(()=>{ try{ splash.remove(); }catch(e){} }, 2500);
+    })();
+
+    /* ========= INIT ========= */
+    renderProductos();
+    renderCart();
+    updateCartButtons();
+    function toggleCheckoutDisabled(){
+  const disabled = cart.length === 0;
+  $checkout.disabled = disabled;
+  $checkout.style.opacity = disabled ? .6 : 1;
+  $checkout.style.cursor = disabled ? 'not-allowed' : 'pointer';
+  $cartTotal.textContent = 'Bs ' + total.toFixed(2);
+toggleCheckoutDisabled();
+}
+
+    // Snackbar
+const $snack = document.getElementById('snack');
+const $snackView = document.getElementById('snack-view');
+const $snackPay = document.getElementById('snack-pay');
+let snackTimer;
+
+function showSnack(){
+  clearTimeout(snackTimer);
+  $snack.classList.add('show');
+  snackTimer = setTimeout(()=> $snack.classList.remove('show'), 2500);
+}
+$snackView.addEventListener('click', ()=>{ $snack.classList.remove('show'); openCart(); });
+$snackPay.addEventListener('click', ()=>{
+  $snack.classList.remove('show');
+  // Abre el carrito y hace scroll al botón de pagar
+  openCart();
+  document.getElementById('checkout')?.scrollIntoView({behavior:'smooth', block:'center'});
+});
+  </script>
+</body>
+</html>
