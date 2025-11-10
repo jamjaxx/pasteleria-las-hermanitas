@@ -104,7 +104,10 @@
     label{font-weight:600; margin:6px 0; display:block}
 
     /* ===== PAGOS ===== */
-    .pay-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:12px}
+   .pay-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:16px}
+@media (max-width:700px){
+  .pay-grid{grid-template-columns:1fr}
+}
     @media (max-width:700px){.pay-grid{grid-template-columns:1fr}}
     .paybox{border:1px solid var(--line); border-radius:16px; padding:14px; background:#fff}
     .qr{display:grid; place-items:center; border:1px dashed var(--line); border-radius:12px; padding:24px; margin-top:8px}
@@ -132,6 +135,22 @@
 }
 .snackbar.show{ opacity:1; pointer-events:auto; transform:translateX(-50%) translateY(0) }
 .snackbar .btn{ background:#fff; border-color:#fff; color:#111827; padding:6px 10px; border-radius:999px; font-weight:700 }
+
+/* Altura del header como variable (se rellena por JS) */
+:root { --header-h: 64px; }
+
+/* En móvil, el panel del carrito inicia debajo del header */
+@media (max-width: 700px){
+  .sheet .panel{
+    top: var(--header-h);
+    height: calc(100% - var(--header-h));
+    border-top: 1px solid var(--line);
+  }
+  /* Evita que el overlay tape el header */
+  .sheet{
+    z-index: 60; /* header puede estar en 10, no importa mientras el panel arranque debajo */
+  }
+}
   </style>
 </head>
 <!-- Snackbar: agregado al carrito -->
@@ -153,7 +172,7 @@
         <img class="brand-logo" src="Images/logo ofi.png" alt="Logo" />
         <div class="row" style="gap:6px;align-items:baseline">
           <span class="badge">Pastelería Las Hermanitas</span>
-          <strong>Tiendita Virtual</strong>
+          <strong>tienda Virtual</strong>
         </div>
       </div>
       <nav>
@@ -172,7 +191,7 @@
       <div class="grid">
         <div>
           <h1>Dulces hechos con cariño, ahora a un clic.</h1>
-          <p>Explora, reserva y compra en línea pasteles simples y deliciosos, con tamaños para cada ocasión. Proyecto educativo con enfoque B2C para Tupiza.</p>
+          <p>Explora, reserva y compra en línea pasteles simples y deliciosos, con tamaños para cada ocasión. Proyecto educativo con enfoque para Tupiza.</p>
           <div class="pillbar">
             <span class="badge">Catálogo en línea</span>
             <span class="badge">Carrito y reservas</span>
@@ -184,9 +203,9 @@
           </div>
         </div>
         <div class="card">
-          <strong>Espacio para portada</strong>
-          <p class="muted">Reemplaza por una foto de tu pastelería o un collage de productos.</p>
-          <img src="Images/portada.png" alt="Portada (coloca tu imagen en Images/portada.jpg)" />
+          <strong>DECORACIONES</strong>
+          <p class="muted">Collage referencial con algunas posibles decoraciones.</p>
+          <img src="Images/portada ofi.png" alt="Portada (coloca tu imagen en Images/portada.jpg)" />
         </div>
       </div>
     </div>
@@ -215,7 +234,7 @@
   <section id="reservas" style="background:linear-gradient(180deg,#fff,#fff8e6)">
     <div class="wrap">
       <h2 class="section-title">Reservas</h2>
-      <p class="sub">Agenda tu pastel con anticipación. Te confirmaremos por WhatsApp/Email.</p>
+      <p class="sub">Agenda tu pastel con anticipación. Te confirmaremos por WhatsApp.</p>
       <form id="reserve-form" class="card" onsubmit="reserve(event)">
         <div class="grid-2">
           <div>
@@ -243,6 +262,7 @@
                 <option value="20 porciones">20 porciones</option>
                 <option value="25 porciones">25 porciones</option>
                 <option value="30 porciones">30 porciones</option>
+                <option value="Evento Grande">Porciones personalizadas</option>
             </select>
           </div>
           <div>
@@ -282,18 +302,14 @@
   <section id="pago">
     <div class="wrap">
       <h2 class="section-title">Formas de pago</h2>
-      <p class="sub">Selecciona un método en el checkout. *Las opciones con tarjeta son demostrativas.</p>
+      <p class="sub">Selecciona un método de pago. *Las opciones con tarjeta son demostrativas.</p>
       <div class="pay-grid">
         <div class="paybox">
           <strong>Pago con QR</strong>
-          <p class="small">Carga tu QR interoperable o del banco que utilices.</p>
+          <p class="small"> Escanea el codigo con tu app bancaria para completar la transacción</p>
           <div class="qr"><img src="Images/QR pago.jpeg" alt="QR (Images/qr.png)" style="max-width:220px"></div>
         </div>
-        <div class="paybox">
-          <strong>Tarjeta / Link de pago</strong>
-          <p class="small">Para producción real, integra tu pasarela. Aquí se simula.</p>
-          <div class="qr">Marcador de pasarela</div>
-        </div>
+        
         <div class="paybox">
           <strong>Efectivo contra entrega</strong>
           <p class="small">Paga al recibir o al recoger. Ideal para pedidos locales.</p>
@@ -362,9 +378,9 @@
 
     // Lista con nombres y números (formato: país+línea, sin '+')
     const WHATSAPP_RECIPIENTS = [
-      { nombre: 'Caja (Mostrador)', phone: '59170000000' },
-      { nombre: 'Administrador',    phone: '59173864580' },
-      { nombre: 'Producción',       phone: '59172222222' }
+      { nombre: 'Asesor 1',phone: '59179445968' },
+      { nombre: 'Asesor 2',phone: '59163537420' },
+      { nombre: 'Asesor 3',phone: '59171838857' }
     ];
     const NEGOCIO_NOMBRE = 'Pastelería Las Hermanitas';
 
@@ -633,6 +649,33 @@ window.reserve = reserve;
   $cartTotal.textContent = 'Bs ' + total.toFixed(2);
 toggleCheckoutDisabled();
 }
+// ===== Ajuste móvil: carrito inicia debajo del header =====
+(function(){
+  const headerEl = document.querySelector('header');
+  if(!headerEl) return;
+
+  function setHeaderHeightVar(){
+    const h = headerEl.offsetHeight || 64;
+    document.documentElement.style.setProperty('--header-h', h + 'px');
+  }
+
+  // Actualiza al cargar, al redimensionar y al abrir el carrito
+  window.addEventListener('load', setHeaderHeightVar);
+  window.addEventListener('resize', setHeaderHeightVar);
+
+  // Si ya tienes openCart/closeCart, engancha aquí para recalcular al abrir
+  const oldOpenCart = window.openCart;
+  window.openCart = function(){
+    setHeaderHeightVar();
+    document.body.style.overflow = 'hidden';   // (opcional) bloquea scroll del fondo en móvil
+    oldOpenCart ? oldOpenCart() : null;
+  };
+  const oldCloseCart = window.closeCart;
+  window.closeCart = function(){
+    document.body.style.overflow = '';         // (opcional) restaura scroll
+    oldCloseCart ? oldCloseCart() : null;
+  };
+})();
 
     // Snackbar
 const $snack = document.getElementById('snack');
