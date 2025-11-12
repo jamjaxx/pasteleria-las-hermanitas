@@ -9,6 +9,13 @@
   <link rel="icon" type="image/png" href="Images/logo ofi.png">
 
   <style>
+
+    /* Carrusel suave en móvil */
+.scroller{
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
+  overscroll-behavior-x: contain;
+}
     :root{
       --bg:#ffffff;--text:#1f2937;--muted:#6b7280;--brand:#f59e0b;--line:#e5e7eb;--card:#f9fafb;
     }
@@ -636,6 +643,73 @@ window.reserve = reserve;
       // Por si algo impide la animación CSS, forzamos su retiro a los 2.5s
       setTimeout(()=>{ try{ splash.remove(); }catch(e){} }, 2500);
     })();
+    /* ===== FIX MÓVIL: carrito sin bloquear gestos ===== */
+(function () {
+  // Detecta móvil (pantallas chicas o dispositivo táctil)
+  const isMobile = () =>
+    window.matchMedia('(max-width: 700px), (pointer: coarse)').matches;
+
+  // --- Envuelve openCart para bloquear el scroll SOLO con carrito abierto (móvil) ---
+  const __openCart = window.openCart;
+  window.openCart = function () {
+    if (isMobile()) {
+      // bloquea scroll de la página detrás del panel
+      document.documentElement.style.overflow = 'hidden';
+      document.body.style.overflow = 'hidden';
+      document.body.style.touchAction = 'none'; // evita “arrastre” del body
+    }
+    if (typeof __openCart === 'function') __openCart();
+  };
+
+  // --- Envuelve closeCart para liberar SIEMPRE el scroll ---
+  const __closeCart = window.closeCart;
+  window.closeCart = function () {
+    // libera scroll en cualquier caso
+    document.documentElement.style.overflow = '';
+    document.body.style.overflow = '';
+    document.body.style.touchAction = '';
+    if (typeof __closeCart === 'function') __closeCart();
+  };
+
+  // Seguridad extra: si cambias de tamaño a desktop, libera scroll
+  window.addEventListener('resize', () => {
+    if (!isMobile()) {
+      document.documentElement.style.overflow = '';
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
+    }
+  });
+
+  // --- addToCart “inteligente”: en móvil no abre panel; en desktop sí si estaba vacío ---
+  const __addToCart_impl = window.addToCart; // por si ya la tienes definida
+  window.addToCart = function (id) {
+    const wasEmpty = Array.isArray(window.cart) ? window.cart.length === 0 : true;
+
+    if (typeof __addToCart_impl === 'function') {
+      // usa tu implementación existente
+      __addToCart_impl(id);
+    } else {
+      // fallback por si no existe (no suele hacer falta)
+      const prod = productosBase.find((p) => p.id === id);
+      if (!prod) return;
+      const found = cart.find((i) => i.id === id);
+      if (found) found.cantidad++;
+      else cart.push({ id: prod.id, nombre: prod.nombre, precio: prod.precio, cantidad: 1 });
+      persist();
+      renderCart();
+      updateCartButtons();
+    }
+
+    // Comportamiento según dispositivo
+    if (wasEmpty && !isMobile()) {
+      // Escritorio: si antes estaba vacío, abre el carrito
+      openCart();
+    } else {
+      // Móvil (o ya había algo): no abras; muestra aviso si existe
+      if (typeof window.showSnack === 'function') showSnack();
+    }
+  };
+})();
 
     /* ========= INIT ========= */
     renderProductos();
