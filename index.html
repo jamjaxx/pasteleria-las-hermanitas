@@ -6,7 +6,7 @@
   <title>Pastelería Las Hermanitas | Tienda Virtual</title>
 
   <!-- 🧁 Favicon -->
-  <link rel="icon" type="image/png" href="Images/logo ofi.png">
+  <link rel="icon" type="image/png" href="Images/Favicon.jpeg">
 
   <style>
 
@@ -212,6 +212,33 @@
   }
 }
   </style>
+
+  <style id="mobile-scroll-hotfix">
+  /* Desplazamiento vertical global siempre activo en móvil */
+  html, body{
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y pinch-zoom;
+    overscroll-behavior: auto;
+  }
+
+  /* Si existen clases de “lock”, neutralízalas sin romper estilos */
+  html.mobile-lock, body.mobile-lock{
+    overflow: auto !important;
+    touch-action: auto !important;
+  }
+
+  /* El panel del carrito scrollea por sí mismo (no bloquea el body) */
+  .sheet .panel{
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    touch-action: auto;
+    overscroll-behavior: contain;
+  }
+
+  /* Por si el snackbar estuviera encima, no capture gestos */
+  .snackbar{ pointer-events: none; }
+  .snackbar .btn{ pointer-events: auto; }
+</style>
 </head>
 <!-- Snackbar: agregado al carrito -->
 <div class="snackbar" id="snack">
@@ -880,5 +907,50 @@ $snackPay.addEventListener('click', ()=>{
   setInterval(safety, 1500);
 })();
   </script>
+
+  <script id="mobile-scroll-hotfix-js">
+  (function(){
+    const d = document, w = window;
+
+    // Suelta cualquier bloqueo global (clases o estilos inline)
+    function hardUnlock(){
+      d.documentElement.classList.remove('mobile-lock');
+      d.body.classList.remove('mobile-lock');
+      d.documentElement.style.overflow = '';
+      d.body.style.overflow = '';
+      d.body.style.position = '';
+      d.body.style.touchAction = '';
+    }
+
+    // Si el carrito no está abierto, el body debe poder desplazarse
+    const sheet = d.getElementById('cart-sheet');
+    if (sheet){
+      new MutationObserver(()=>{
+        if (!sheet.classList.contains('open')) hardUnlock();
+      }).observe(sheet, {attributes:true, attributeFilter:['class']});
+    }
+
+    // Envuelve openCart/closeCart para NO bloquear el body y SIEMPRE liberar al cerrar
+    const _open = w.openCart;
+    w.openCart = function(){
+      // No establecemos overflow hidden en body/html (deja que el panel scrollee solo)
+      if (typeof _open === 'function') _open();
+    };
+
+    const _close = w.closeCart;
+    w.closeCart = function(){
+      if (typeof _close === 'function') _close();
+      hardUnlock(); // seguridad: libera todo al cerrar
+    };
+
+    // Eventos de sistema que podrían dejar bloqueos residuales → libera
+    ['load','pageshow','visibilitychange','orientationchange','resize','hashchange']
+      .forEach(ev => w.addEventListener(ev, hardUnlock, {passive:true}));
+
+    // Listeners pasivos para permitir scroll fluido en iOS
+    w.addEventListener('touchstart', ()=>{}, {passive:true});
+    w.addEventListener('touchmove',  ()=>{}, {passive:true});
+  })();
+</script>
 </body>
 </html>
