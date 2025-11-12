@@ -134,14 +134,24 @@
     /* ===== Responsive ===== */
     @media (max-width:900px){.hero .grid{grid-template-columns:1fr}}
     /* Snackbar */
+
+/* Snackbar: no bloquear gestos; solo sus botones reciben toques */
 .snackbar{
   position:fixed; left:50%; bottom:18px; transform:translateX(-50%);
   background:#111827; color:#fff; padding:10px 14px; border-radius:12px;
   display:flex; gap:10px; align-items:center; z-index:80;
-  box-shadow:0 8px 20px rgba(0,0,0,.25); opacity:0; pointer-events:none; transition:opacity .2s, transform .2s;
+  box-shadow:0 8px 20px rgba(0,0,0,.25);
+  opacity:0; pointer-events:none; transition:opacity .2s, transform .2s;
 }
-.snackbar.show{ opacity:1; pointer-events:auto; transform:translateX(-50%) translateY(0) }
-.snackbar .btn{ background:#fff; border-color:#fff; color:#111827; padding:6px 10px; border-radius:999px; font-weight:700 }
+.snackbar.show{
+  opacity:1; transform:translateX(-50%) translateY(0);
+}
+.snackbar .btn{
+  background:#fff; border-color:#fff; color:#111827;
+  padding:6px 10px; border-radius:999px; font-weight:700;
+  pointer-events:auto;
+}
+
 
 /* Altura del header como variable (se rellena por JS) */
 :root { --header-h: 64px; }
@@ -477,31 +487,20 @@
     $closeCart.addEventListener('click',closeCart);
     $backCart.addEventListener('click',closeCart);
 
-    function addToCart(id){
+    
+function addToCart(id){
   const prod = productosBase.find(p=>p.id===id);
   if(!prod) return;
-
-  // 👇 Detecta si el carrito estaba vacío ANTES de agregar
   const wasEmpty = cart.length === 0;
-
   const found = cart.find(i=>i.id===id);
-  if(found) {
-    found.cantidad++;
-  } else {
-    cart.push({id:prod.id, nombre:prod.nombre, precio:prod.precio, cantidad:1});
-  }
-
-  persist();
-  renderCart();
-  updateCartButtons();
-
-  // 👇 Si estaba vacío, abrimos el carrito; si no, mostramos snackbar
-  if (wasEmpty) {
-    openCart();
-  } else {
-    if (typeof showSnack === 'function') showSnack();
-  }
+  if(found) found.cantidad++;
+  else cart.push({id:prod.id, nombre:prod.nombre, precio:prod.precio, cantidad:1});
+  persist(); renderCart(); updateCartButtons();
+  const isMobile = window.matchMedia('(max-width:700px), (pointer:coarse)').matches;
+  if (wasEmpty && !isMobile) openCart();
+  else if (typeof showSnack === 'function') showSnack();
 }
+
 
     function changeQty(id,delta){
       const item = cart.find(i=>i.id===id); if(!item) return;
