@@ -135,21 +135,64 @@
     @media (max-width:900px){.hero .grid{grid-template-columns:1fr}}
     /* Snackbar */
 
-/* Snackbar: no bloquear gestos; solo sus botones reciben toques */
-.snackbar{
-  position:fixed; left:50%; bottom:18px; transform:translateX(-50%);
-  background:#111827; color:#fff; padding:10px 14px; border-radius:12px;
-  display:flex; gap:10px; align-items:center; z-index:80;
-  box-shadow:0 8px 20px rgba(0,0,0,.25);
-  opacity:0; pointer-events:none; transition:opacity .2s, transform .2s;
+
+/* ===== FIX MÓVIL SCROLL & SNACKBAR ===== */
+
+/* Carrusel suave (para swipe horizontal) */
+.scroller {
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
+  overscroll-behavior-x: contain;
 }
-.snackbar.show{
-  opacity:1; transform:translateX(-50%) translateY(0);
+
+/* Panel del carrito: solo recibe eventos cuando está abierto */
+.sheet { pointer-events: none; }
+.sheet.open { pointer-events: auto; }
+
+/* Snackbar que no bloquea gestos */
+.snackbar {
+  position: fixed;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  background: #111827;
+  color: #fff;
+  padding: 10px 14px;
+  border-radius: 12px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  z-index: 80;
+  box-shadow: 0 8px 20px rgba(0,0,0,.25);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .2s, transform .2s;
 }
-.snackbar .btn{
-  background:#fff; border-color:#fff; color:#111827;
-  padding:6px 10px; border-radius:999px; font-weight:700;
-  pointer-events:auto;
+.snackbar.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+.snackbar .btn {
+  pointer-events: auto;
+  background: #fff;
+  color: #111827;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-weight: 700;
+}
+
+/* Lock temporal controlado desde JS (solo móvil) */
+@media (max-width: 700px) {
+  html.mobile-lock,
+  body.mobile-lock {
+    overflow: hidden !important;
+    touch-action: none !important;
+  }
+  :root { --header-h: 64px; }
+  .sheet .panel {
+    top: var(--header-h);
+    height: calc(100% - var(--header-h));
+  }
 }
 
 
@@ -496,9 +539,13 @@ function addToCart(id){
   if(found) found.cantidad++;
   else cart.push({id:prod.id, nombre:prod.nombre, precio:prod.precio, cantidad:1});
   persist(); renderCart(); updateCartButtons();
+
   const isMobile = window.matchMedia('(max-width:700px), (pointer:coarse)').matches;
-  if (wasEmpty && !isMobile) openCart();
-  else if (typeof showSnack === 'function') showSnack();
+  if (wasEmpty && !isMobile) {
+    openCart();
+  } else {
+    if (typeof showSnack === 'function') showSnack();
+  }
 }
 
 
@@ -768,6 +815,70 @@ $snackPay.addEventListener('click', ()=>{
   openCart();
   document.getElementById('checkout')?.scrollIntoView({behavior:'smooth', block:'center'});
 });
+
+/* ===== FIX MÓVIL SCROLL CARRITO ===== */
+(function(){
+  const d = document, w = window;
+  const isMobile = () => w.matchMedia('(max-width:700px), (pointer:coarse)').matches;
+  const $sheet = d.getElementById('cart-sheet');
+  const $close = d.getElementById('close-cart');
+  const $clear = d.getElementById('clear-cart');
+
+  // Ajusta variable de altura del header (para que el carrito empiece debajo)
+  (function setHeaderH(){
+    const header = d.querySelector('header');
+    const setH = ()=> {
+      const h = header ? (header.offsetHeight||64) : 64;
+      d.documentElement.style.setProperty('--header-h', h + 'px');
+    };
+    w.addEventListener('load', setH);
+    w.addEventListener('resize', setH);
+    setH();
+  })();
+
+  // Bloquea y desbloquea scroll solo en móvil
+  function lockScroll(){
+    if (!isMobile()) return;
+    d.documentElement.classList.add('mobile-lock');
+    d.body.classList.add('mobile-lock');
+  }
+  function unlockScroll(){
+    d.documentElement.classList.remove('mobile-lock');
+    d.body.classList.remove('mobile-lock');
+  }
+
+  // Observa el carrito (cuando abre o cierra)
+  if ($sheet){
+    const obs = new MutationObserver(()=>{
+      const open = $sheet.classList.contains('open');
+      if (open) lockScroll(); else unlockScroll();
+    });
+    obs.observe($sheet, {attributes:true, attributeFilter:['class']});
+  }
+
+  // Asegura desbloqueo al cerrar o limpiar
+  const _open = w.openCart;
+  w.openCart = function(){
+    if (typeof _open === 'function') _open();
+    lockScroll();
+  };
+  const _close = w.closeCart;
+  w.closeCart = function(){
+    if (typeof _close === 'function') _close();
+    unlockScroll();
+  };
+  [$close, $clear].forEach(btn => btn && btn.addEventListener('click', unlockScroll, {passive:true}));
+
+  // Seguridad extra (por si el navegador cambia orientación o regresas de otra pestaña)
+  const safety = ()=>{
+    const open = $sheet && $sheet.classList.contains('open');
+    if (!open) unlockScroll();
+  };
+  ['pageshow','resize','orientationchange','visibilitychange'].forEach(ev=>{
+    w.addEventListener(ev, safety, {passive:true});
+  });
+  setInterval(safety, 1500);
+})();
   </script>
 </body>
 </html>
