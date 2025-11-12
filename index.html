@@ -586,7 +586,7 @@ $checkout.addEventListener('click', ()=>{
 
   const resumen = cart.map(i=>`${i.cantidad} x ${i.nombre} (Bs ${i.precio})`).join('\n');
   const total = cart.reduce((n,i)=>n+i.precio*i.cantidad,0).toFixed(2);
-  const metodo = prompt(`Resumen:\n${resumen}\n\nTotal: Bs ${total}\n\nEscribe el método: QR / Tarjeta / Efectivo`);
+  const metodo = prompt(`Resumen:\n${resumen}\n\nTotal: Bs ${total}\n\nEscribe el método: QR / Efectivo`);
   if(!metodo) return;
 
   // ✅ Armar mensaje en texto plano (con \n) y codificar una sola vez
